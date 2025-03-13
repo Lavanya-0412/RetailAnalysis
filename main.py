@@ -3,14 +3,16 @@ import pandas as pd
 import pymysql
 import json
 
-
 st.title("📊 Retail Order Analysis")
 
+# Load queries from JSON file
 with open("queries.json", "r", encoding="utf-8") as f:
     queries = json.load(f)
 
+# Define tabs
 tab1, tab2 = st.tabs(["📁 Set 1 (Q1–Q10)", "📂 Set 2 (Q11–Q20)"])
 
+# Query labels
 query_labels_set1 = [
     "1. Top 10 Highest Revenue Generating Products",
     "2. Top 5 Cities with Highest Profit Margins",
@@ -37,6 +39,43 @@ query_labels_set2 = [
     "20. Products with Highest Order Volume & Revenue"
 ]
 
+
+def execute_and_visualize_query(query):
+    try:
+        connection = pymysql.connect(
+            host="gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
+            user="2X5KUwsdnLEwrHQ.root",
+            password="TjI9l52hFr0QUFmp",
+            database="RetailAnalysis",
+            ssl_verify_cert=True,
+            ssl_verify_identity=True,
+            ssl_ca=r"C:\Users\welcome\Downloads\isrgrootx1 (5).pem",
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        cursor = connection.cursor()
+        cursor.execute(query)
+        data = cursor.fetchall()
+        df = pd.DataFrame(data)
+
+        st.success("✅ Query executed successfully!")
+        st.dataframe(df)
+
+        
+        if df.shape[1] >= 2:
+            x_col = df.columns[0]
+            y_col = df.columns[1]
+            st.subheader("📊 Bar Chart")
+            st.bar_chart(df.set_index(x_col)[y_col])
+        else:
+            st.info("ℹ️ Not enough data columns to show a bar chart.")
+        
+        cursor.close()
+        connection.close()
+
+    except Exception as e:
+        st.error(f"❌ SQL Execution Error: {e}")
+
+# --- Set 1 ---
 with tab1:
     selected_label1 = st.selectbox("📋 Select a Query (Set 1)", query_labels_set1)
     query_index1 = query_labels_set1.index(selected_label1)
@@ -44,54 +83,14 @@ with tab1:
     st.code(selected_query1, language="sql")
 
     if st.button("▶️ Run Query (Set 1)"):
-        try:
-            connection = pymysql.connect(
-                host="gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-                user="2X5KUwsdnLEwrHQ.root",
-                password="TjI9l52hFr0QUFmp",
-                database="RetailAnalysis",
-                ssl_verify_cert=True,
-                ssl_verify_identity=True,
-                ssl_ca=r"C:\Users\welcome\Downloads\isrgrootx1 (5).pem",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            cursor = connection.cursor()
-            cursor.execute(selected_query1)
-            data = cursor.fetchall()
-            df = pd.DataFrame(data)
-            st.success("✅ Query executed successfully!")
-            st.dataframe(df)
-            cursor.close()
-            connection.close()
-        except Exception as e:
-            st.error(f"❌ SQL Execution Error: {e}")
+        execute_and_visualize_query(selected_query1)
 
-# --- Set 2 Tab ---
+# --- Set 2 ---
 with tab2:
     selected_label2 = st.selectbox("📋 Select a Query (Set 2)", query_labels_set2)
-    query_index2 = query_labels_set2.index(selected_label2) + 10 
+    query_index2 = query_labels_set2.index(selected_label2) + 10
     selected_query2 = queries[query_index2]
     st.code(selected_query2, language="sql")
 
     if st.button("▶️ Run Query (Set 2)"):
-        try:
-            connection = pymysql.connect(
-                host="gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-                user="2X5KUwsdnLEwrHQ.root",
-                password="TjI9l52hFr0QUFmp",
-                database="RetailAnalysis",
-                ssl_verify_cert=True,
-                ssl_verify_identity=True,
-                ssl_ca=r"C:\Users\welcome\Downloads\isrgrootx1 (5).pem",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            cursor = connection.cursor()
-            cursor.execute(selected_query2)
-            data = cursor.fetchall()
-            df = pd.DataFrame(data)
-            st.success("✅ Query executed successfully!")
-            st.dataframe(df)
-            cursor.close()
-            connection.close()
-        except Exception as e:
-            st.error(f"❌ SQL Execution Error: {e}")
+        execute_and_visualize_query(selected_query2)
